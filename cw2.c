@@ -22,7 +22,7 @@ int main(int argc, char **argv)
      * number of threads: default: 1
      */
     arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 10;
-    double precision = (argv[2]) ? atof(argv[2]) : 1.0;
+    //double precision = (argv[2]) ? atof(argv[2]) : 1.0;
 
 
     /* init mpi */
@@ -50,30 +50,31 @@ int main(int argc, char **argv)
             rowNums[i]++;
         }
         size[i] = rowNums[i] * (arrLen - 2);
-
     }
+    printf("rank %d: rowNum = %d, size = %d\n", myrank, rowNums[myrank], size[myrank]);
 
     
 
-    int startRow, endRow;
+    int startRow = 0;
     for (int i = 0; i < myrank; ++i)
     {
         startRow += rowNums[i];
     }
-    endRow = startRow + rowNums[myrank] + 1;
+    int endRow = startRow + rowNums[myrank] + 1;
+    printf("rank %d: %d - %d\n", myrank, startRow, endRow);
 
     
 
     /* init array */
-    //double randArr[arrLen * arrLen];
-    double *randArr = (double *)malloc(arrLen*arrLen*sizeof(double));
+    double randArr[arrLen * arrLen];
+    //double *randArr = (double *)malloc(arrLen*arrLen*sizeof(double));
     if (myrank == ROOT)
     {
         for(int i = 0; i < arrLen*arrLen; i++)
         {
             randArr[i] = fRand(RMAX);
         }
-        print2DArr(randArr, arrLen, arrLen);
+        //print2DArr(randArr, arrLen, arrLen);
     }
 
     namelen = LEN;
@@ -84,53 +85,55 @@ int main(int argc, char **argv)
     MPI_Bcast(randArr, arrLen*arrLen, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     //int rowNum = rowNums[myrank];//endRow - startRow - 1;
     //int colNum = arrLen - 2;
-    double *result = (double *)malloc(size[myrank] * sizeof(double));
+    double result[size[myrank]];
+    //double *result = (double *)malloc(size[myrank] * sizeof(double));
 
     averaging(randArr, startRow, endRow, result);
-    //printf("rank %d: %d - %d\n", myrank, startRow, endRow);
-    //print2DArr(result, rowNums[myrank], arrLen - 2);
+    print2DArr(result, rowNums[myrank], arrLen - 2);
     
-    /*
-    for(int r = 0; r < rowNum; ++r)
-    {
-        if (r == 0)
-        {
-            printf("rank %d: %d - %d\n", myrank, startRow, endRow);
-        }
 
-        for(int c = 0; c < colNum; ++c)
-        {
-            printf("%.1f\t", result[r*colNum+c]);
-        }
-        printf("\n");
-    }
-    */
 
-    /* 
+    //int n[5] = {0,1,2,3,4};
     if(myrank == ROOT)
     {
         for(int i = 1; i < nproc; ++i)
         {
-            double *newArr = (double *)malloc(size[i] * sizeof(double));
-            MPI_Status stat;
-            MPI_Recv(newArr, size[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &stat);
+           //int *r = (int *)malloc(5 * sizeof(int));
+           //int r[5];
+           //MPI_Status stat;
+           //MPI_Recv(r, 5, MPI_INT, i, 0, MPI_COMM_WORLD, &stat);
+          // for(int m = 0; m < 5; ++m)
+          // {
+          //     printf("%d\t", r[m]);
+          // }
+           printf("%d\n", i);
+           //free(r); 
+            //double *newArr1 = (double *)malloc(size[i] * sizeof(double));
+            //double newArr[size[i]];
+            //MPI_Status stat;
+            //MPI_Recv(newArr, size[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &stat);
+            //print2DArr(newArr, rowNums[i], arrLen - 2);
             //replaceArr(randArr, newArr, rowNums, i); 
-            free(newArr);
+            //free(newArr);
         }
     }
     else
     {
-        MPI_Send(result, size[myrank], MPI_DOUBLE, myrank, 0, MPI_COMM_WORLD);
+        //n[0] = myrank;
+        //MPI_Send(n, 5, MPI_INT, ROOT, 0, MPI_COMM_WORLD);
+        //MPI_Send(result, size[myrank], MPI_DOUBLE, ROOT, 0, MPI_COMM_WORLD);
     }
     
-    print2DArr(randArr, arrLen, arrLen);
-    */
+    //print2DArr(randArr, arrLen, arrLen);
 
 
 
     MPI_Barrier(MPI_COMM_WORLD);
     
     MPI_Finalize();
+
+    //free(result);
+    //free(randArr);
     return 0;
 }
 
@@ -169,8 +172,9 @@ void averaging(double *arr, int row_s, int row_e, double *result)
     {
         for(int c = 1; c < col - 1; ++c)
         {
-            result[i] = (arr[r*col + c - 1] + arr[r*col + c + 1] +
-                    arr[(r-1)*col + c] + arr[(r+1)*col +c]) / 4;
+            //result[i] = (arr[r*col + c - 1] + arr[r*col + c + 1] +
+            //        arr[(r-1)*col + c] + arr[(r+1)*col +c]) / 4;
+            result[i] = i;
             i++;
         }
     }
