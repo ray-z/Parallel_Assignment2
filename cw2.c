@@ -51,9 +51,6 @@ int main(int argc, char **argv)
         }
         size[i] = rowNums[i] * (arrLen - 2);
     }
-    printf("rank %d: rowNum = %d, size = %d\n", myrank, rowNums[myrank], size[myrank]);
-
-    
 
     int startRow = 0;
     for (int i = 0; i < myrank; ++i)
@@ -61,9 +58,7 @@ int main(int argc, char **argv)
         startRow += rowNums[i];
     }
     int endRow = startRow + rowNums[myrank] + 1;
-    printf("rank %d: %d - %d\n", myrank, startRow, endRow);
-
-    
+    //printf("rank: %d: %d - %d\n", myrank, startRow, endRow);
 
     /* init array */
     double randArr[arrLen * arrLen];
@@ -74,7 +69,8 @@ int main(int argc, char **argv)
         {
             randArr[i] = fRand(RMAX);
         }
-        //print2DArr(randArr, arrLen, arrLen);
+        printf("Initial square array:\n");
+        print2DArr(randArr, arrLen, arrLen);
     }
 
     namelen = LEN;
@@ -89,7 +85,7 @@ int main(int argc, char **argv)
     //double *result = (double *)malloc(size[myrank] * sizeof(double));
 
     averaging(randArr, startRow, endRow, result);
-    print2DArr(result, rowNums[myrank], arrLen - 2);
+    //print2DArr(result, rowNums[myrank], arrLen - 2);
     
 
 
@@ -99,32 +95,34 @@ int main(int argc, char **argv)
         for(int i = 1; i < nproc; ++i)
         {
            //int *r = (int *)malloc(5 * sizeof(int));
-           //int r[5];
-           //MPI_Status stat;
-           //MPI_Recv(r, 5, MPI_INT, i, 0, MPI_COMM_WORLD, &stat);
+          // int r[5];
+          // MPI_Status stat;
+          // MPI_Recv(r, 5, MPI_INT, i, 0, MPI_COMM_WORLD, &stat);
           // for(int m = 0; m < 5; ++m)
           // {
           //     printf("%d\t", r[m]);
           // }
-           printf("%d\n", i);
+          //printf("%d\n", i);
            //free(r); 
             //double *newArr1 = (double *)malloc(size[i] * sizeof(double));
-            //double newArr[size[i]];
-            //MPI_Status stat;
-            //MPI_Recv(newArr, size[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &stat);
-            //print2DArr(newArr, rowNums[i], arrLen - 2);
-            //replaceArr(randArr, newArr, rowNums, i); 
+            double newArr[size[i]];
+            MPI_Status stat;
+            MPI_Recv(newArr, size[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &stat);
+            print2DArr(newArr, rowNums[i], arrLen - 2);
+            replaceArr(randArr, newArr, rowNums, i); 
             //free(newArr);
         }
+        printf("Result square array:\n");
+        print2DArr(randArr, arrLen, arrLen);
     }
     else
     {
         //n[0] = myrank;
         //MPI_Send(n, 5, MPI_INT, ROOT, 0, MPI_COMM_WORLD);
-        //MPI_Send(result, size[myrank], MPI_DOUBLE, ROOT, 0, MPI_COMM_WORLD);
+        MPI_Send(result, size[myrank], MPI_DOUBLE, ROOT, 0, MPI_COMM_WORLD);
     }
     
-    //print2DArr(randArr, arrLen, arrLen);
+
 
 
 
@@ -132,20 +130,18 @@ int main(int argc, char **argv)
     
     MPI_Finalize();
 
-    //free(result);
-    //free(randArr);
     return 0;
 }
 
 
 void replaceArr(double *arr, double *newArr, int *rowNums, int rank)
 {
-    int row_s, row_e;
+    int row_s = 0;
     for (int i = 0; i < rank; ++i)
     {
         row_s += rowNums[i];
     }
-    row_e = row_s + rowNums[rank] + 1;
+    int row_e = row_s + rowNums[rank] + 1;
 
     int col = arrLen;
     int i = 0;
@@ -157,6 +153,7 @@ void replaceArr(double *arr, double *newArr, int *rowNums, int rank)
             i++;
         }
     }
+    //print2DArr(arr, arrLen, arrLen);
 }
 
 
@@ -172,9 +169,9 @@ void averaging(double *arr, int row_s, int row_e, double *result)
     {
         for(int c = 1; c < col - 1; ++c)
         {
-            //result[i] = (arr[r*col + c - 1] + arr[r*col + c + 1] +
-            //        arr[(r-1)*col + c] + arr[(r+1)*col +c]) / 4;
-            result[i] = i;
+            result[i] = (arr[r*col + c - 1] + arr[r*col + c + 1] +
+                    arr[(r-1)*col + c] + arr[(r+1)*col +c]) / 4;
+            //result[i] = i;
             i++;
         }
     }
