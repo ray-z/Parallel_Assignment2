@@ -7,6 +7,8 @@
 #define RMAX 10.00   /* maximum random number */
 #define ROOT 0
 int arrLen;
+double precision;
+int isEnd;
 double fRand(double max);
 void print2DArr(double *arr, int row, int col);
 void replaceArr(double *arr, double *newArr, int *rowNums, int rank);
@@ -22,7 +24,9 @@ int main(int argc, char **argv)
      * number of threads: default: 1
      */
     arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 10;
-    //double precision = (argv[2]) ? atof(argv[2]) : 1.0;
+    precision = (argv[2]) ? atof(argv[2]) : 1.0;
+
+    isEnd = 0;
 
 
     /* init mpi */
@@ -77,56 +81,48 @@ int main(int argc, char **argv)
     MPI_Get_processor_name(name, &namelen);
 
     
-    /* do averaging */
-    MPI_Bcast(randArr, arrLen*arrLen, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    //int rowNum = rowNums[myrank];//endRow - startRow - 1;
-    //int colNum = arrLen - 2;
-    double result[size[myrank]];
-    //double *result = (double *)malloc(size[myrank] * sizeof(double));
-
-    averaging(randArr, startRow, endRow, result);
-    //print2DArr(result, rowNums[myrank], arrLen - 2);
     
 
 
-    //int n[5] = {0,1,2,3,4};
-    if(myrank == ROOT)
+    /* send and receive result */
+    int counter = 1;
+    while(!isEnd)
     {
-        for(int i = 1; i < nproc; ++i)
+        isEnd = 1;
+        /* do averaging */
+        MPI_Bcast(randArr, arrLen*arrLen, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        double result[size[myrank]];
+        averaging(randArr, startRow, endRow, result);
+        //print2DArr(result, rowNums[myrank], arrLen - 2);
+        if(myrank == ROOT)
         {
-           //int *r = (int *)malloc(5 * sizeof(int));
-          // int r[5];
-          // MPI_Status stat;
-          // MPI_Recv(r, 5, MPI_INT, i, 0, MPI_COMM_WORLD, &stat);
-          // for(int m = 0; m < 5; ++m)
-          // {
-          //     printf("%d\t", r[m]);
-          // }
-          //printf("%d\n", i);
-           //free(r); 
-            //double *newArr1 = (double *)malloc(size[i] * sizeof(double));
-            double newArr[size[i]];
-            MPI_Status stat;
-            MPI_Recv(newArr, size[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &stat);
-            print2DArr(newArr, rowNums[i], arrLen - 2);
-            replaceArr(randArr, newArr, rowNums, i); 
-            //free(newArr);
+            replaceArr(randArr, result, rowNums, 0); 
+
+            for(int i = 1; i < nproc; ++i)
+            {
+                double newArr[size[i]];
+                MPI_Status stat;
+                MPI_Recv(newArr, size[i], MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &stat);
+                //print2DArr(newArr, rowNums[i], arrLen - 2);
+                replaceArr(randArr, newArr, rowNums, i); 
+            }
+            printf("Round %d:\n", counter);
+            print2DArr(randArr, arrLen, arrLen);
+            counter++;
         }
-        printf("Result square array:\n");
-        print2DArr(randArr, arrLen, arrLen);
+        else
+        {
+            MPI_Send(result, size[myrank], MPI_DOUBLE, ROOT, 0, MPI_COMM_WORLD);
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Bcast(&isEnd, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }
-    else
-    {
-        //n[0] = myrank;
-        //MPI_Send(n, 5, MPI_INT, ROOT, 0, MPI_COMM_WORLD);
-        MPI_Send(result, size[myrank], MPI_DOUBLE, ROOT, 0, MPI_COMM_WORLD);
-    }
+    printf("rank: %d finished.\n", myrank);
     
 
 
 
 
-    MPI_Barrier(MPI_COMM_WORLD);
     
     MPI_Finalize();
 
@@ -149,6 +145,7 @@ void replaceArr(double *arr, double *newArr, int *rowNums, int rank)
     {
         for(int c = 1; c < col - 1; ++c)
         {
+            if(fabs(arr[r*col + c] - newArr[i]) >= precision)  isEnd = 0;
             arr[r*col + c] = newArr[i];
             i++;
         }
