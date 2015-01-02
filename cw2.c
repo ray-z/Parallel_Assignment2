@@ -4,7 +4,7 @@
 #include <math.h>
 
 #define LEN (128)
-#define RMAX 10.00   /* maximum random number */
+#define RMAX 100.00   /* maximum random number */
 #define ROOT 0
 int arrLen;
 double precision;
@@ -66,19 +66,19 @@ int main(int argc, char **argv)
 
     /* init array */
     double randArr[arrLen * arrLen];
-    //double *randArr = (double *)malloc(arrLen*arrLen*sizeof(double));
     if (myrank == ROOT)
     {
         for(int i = 0; i < arrLen*arrLen; i++)
         {
             randArr[i] = fRand(RMAX);
         }
-        printf("Initial square array:\n");
-        print2DArr(randArr, arrLen, arrLen);
+        //printf("Initial square array:\n");
+        //print2DArr(randArr, arrLen, arrLen);
     }
 
     namelen = LEN;
     MPI_Get_processor_name(name, &namelen);
+    printf("rank: %d in node: %s\n", myrank, name);
 
     
     
@@ -106,8 +106,8 @@ int main(int argc, char **argv)
                 //print2DArr(newArr, rowNums[i], arrLen - 2);
                 replaceArr(randArr, newArr, rowNums, i); 
             }
-            printf("Round %d:\n", counter);
-            print2DArr(randArr, arrLen, arrLen);
+            //printf("Round %d:\n", counter);
+            //print2DArr(randArr, arrLen, arrLen);
             counter++;
         }
         else
@@ -117,19 +117,16 @@ int main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Bcast(&isEnd, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }
-    printf("rank: %d finished.\n", myrank);
-    
-
-
-
-
+    //printf("rank: %d finished.\n", myrank);
     
     MPI_Finalize();
 
     return 0;
 }
 
-
+/*
+ * replaceArr: replace old values with new values with regard to rank number
+ */
 void replaceArr(double *arr, double *newArr, int *rowNums, int rank)
 {
     int row_s = 0;
@@ -168,7 +165,6 @@ void averaging(double *arr, int row_s, int row_e, double *result)
         {
             result[i] = (arr[r*col + c - 1] + arr[r*col + c + 1] +
                     arr[(r-1)*col + c] + arr[(r+1)*col +c]) / 4;
-            //result[i] = i;
             i++;
         }
     }
@@ -184,7 +180,7 @@ void print2DArr(double *arr, int row, int col)
     {
         for(int c = 0; c < col; c++)
         {
-            printf("%.1f\t", arr[r*col + c]);
+            printf("%3.2f\t", arr[r*col + c]);
         }
         printf("\n");
     }
