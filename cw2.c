@@ -23,6 +23,12 @@ int main(int argc, char **argv)
      * precision: default: 1.0
      * number of threads: default: 1
      */
+    if (argc !=2)
+    {   
+        printf("Not engouh argument, please spcify array size and precision.\n");
+        return 0;
+    }
+
     arrLen = (argv[1]) ? strtol(argv[1], NULL, 10) : 10;
     precision = (argv[2]) ? atof(argv[2]) : 1.0;
 
